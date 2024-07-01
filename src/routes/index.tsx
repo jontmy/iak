@@ -1,4 +1,5 @@
 import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { animated, createSpring } from "solid-spring";
 
 export default function Home() {
     const [isDragging, setIsDragging] = createSignal(false);
@@ -6,13 +7,15 @@ export default function Home() {
     const [startAngle, setStartAngle] = createSignal(0);
     const [ref, setRef] = createSignal<HTMLImageElement>();
 
+    const styles = createSpring(() => ({
+        from: { rotation: rotation() },
+        to: [{ rotation: rotation() }],
+    }));
+
     const center = createMemo(() => {
         const rect = ref()?.getBoundingClientRect();
         if (!rect) {
-            return {
-                x: 0,
-                y: 0,
-            };
+            return { x: 0, y: 0 };
         }
         return {
             x: rect.left + rect.width / 2 + window.scrollX,
@@ -21,9 +24,7 @@ export default function Home() {
     });
 
     function handleDragStart(e: MouseEvent | TouchEvent) {
-        if (isPinchEvent(e)) {
-            return;
-        }
+        if (isPinchEvent(e)) return;
         const { x, y } = getClientCoordinates(e);
         const angle = Math.atan2(y - center().y, x - center().x);
         setStartAngle(angle);
@@ -35,21 +36,22 @@ export default function Home() {
     }
 
     function handleDrag(e: MouseEvent | TouchEvent) {
-        if (!isDragging()) {
-            return;
-        }
-        if (isPinchEvent(e)) {
-            return;
-        }
+        if (!isDragging() || isPinchEvent(e)) return;
         e.preventDefault();
         const { x, y } = getClientCoordinates(e);
         const angle = Math.atan2(
             (y - center().y) / window.devicePixelRatio,
             (x - center().x) / window.devicePixelRatio,
         );
-        const newRotation = rotation() + (angle - startAngle()) * (180 / Math.PI);
-        setRotation(newRotation);
-        console.log(newRotation);
+        const deltaRotation = (angle - startAngle()) * (180 / Math.PI);
+        const newRotation = rotation() + deltaRotation;
+        if (deltaRotation > 180) {
+            setRotation(rotation() - 360 + deltaRotation);
+        } else if (deltaRotation < -180) {
+            setRotation(rotation() + 360 + deltaRotation);
+        } else {
+            setRotation(newRotation);
+        }
         setStartAngle(angle);
     }
 
@@ -57,32 +59,32 @@ export default function Home() {
         document.addEventListener("touchmove", handleDrag, { passive: false });
         document.addEventListener("touchend", handleDragEnd, { passive: false });
         document.addEventListener("touchstart", handleDragStart, { passive: false });
-
         onCleanup(() => {
             document.removeEventListener("touchmove", handleDrag);
-            document.removeEventListener("touchend", handleDragStart);
-            document.removeEventListener("touchstart", handleDragEnd);
+            document.removeEventListener("touchend", handleDragEnd);
+            document.removeEventListener("touchstart", handleDragStart);
         });
     });
 
     return (
         <main
-            class="fixed overflow-hidden w-screen h-screen"
+            classList={{
+                "fixed h-screen w-screen overflow-hidden": true,
+                "cursor-grabbing": isDragging(),
+                "cursor-grab": !isDragging(),
+            }}
             onMouseUp={handleDragEnd}
             onMouseDown={handleDragStart}
             onMouseMove={handleDrag}
-            style={{
-                cursor: isDragging() ? "grabbing" : "grab",
-            }}
         >
-            <img
+            <animated.img
                 ref={setRef}
                 src="./wheel.png"
                 alt="An emotion wheel comprising of 3 rings"
                 class="max-w-screen fixed inset-0 m-auto aspect-square max-h-screen object-scale-down"
                 draggable="false"
                 style={{
-                    transform: `rotate(${rotation()}deg)`,
+                    transform: styles().rotation.to((r) => `rotate(${r}deg)`),
                 }}
             />
         </main>
