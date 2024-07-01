@@ -1,3 +1,4 @@
+import { Title } from "@solidjs/meta";
 import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import { animated, createSpring } from "solid-spring";
 
@@ -67,27 +68,30 @@ export default function Home() {
     });
 
     return (
-        <main
-            classList={{
-                "fixed h-screen w-screen overflow-hidden": true,
-                "cursor-grabbing": isDragging(),
-                "cursor-grab": !isDragging(),
-            }}
-            onMouseUp={handleDragEnd}
-            onMouseDown={handleDragStart}
-            onMouseMove={handleDrag}
-        >
-            <animated.img
-                ref={setRef}
-                src="./wheel.png"
-                alt="An emotion wheel comprising of 3 rings"
-                class="max-w-screen fixed inset-0 m-auto aspect-square max-h-screen object-scale-down"
-                draggable="false"
-                style={{
-                    transform: styles().rotation.to((r) => `rotate(${r}deg)`),
+        <>
+            <Title>Emotion Wheel</Title>
+            <main
+                classList={{
+                    "fixed h-screen w-screen overflow-hidden": true,
+                    "cursor-grabbing": isDragging(),
+                    "cursor-grab": !isDragging(),
                 }}
-            />
-        </main>
+                onMouseUp={handleDragEnd}
+                onMouseDown={handleDragStart}
+                onMouseMove={handleDrag}
+            >
+                <animated.img
+                    ref={setRef}
+                    src="./wheel.png"
+                    alt="An emotion wheel comprising of 3 rings"
+                    class="max-w-screen fixed inset-0 m-auto aspect-square max-h-screen object-scale-down"
+                    draggable="false"
+                    style={{
+                        transform: styles().rotation.to((r) => `rotate(${r}deg)`),
+                    }}
+                />
+            </main>
+        </>
     );
 }
 
