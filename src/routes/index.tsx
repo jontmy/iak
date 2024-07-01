@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
 export default function Home() {
     const [isDragging, setIsDragging] = createSignal(false);
@@ -15,8 +15,8 @@ export default function Home() {
             };
         }
         return {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2,
+            x: rect.left + rect.width / 2 + window.scrollX,
+            y: rect.top + rect.height / 2 + window.scrollY,
         };
     });
 
@@ -41,11 +41,27 @@ export default function Home() {
         if (isPinchEvent(e)) {
             return;
         }
+        e.preventDefault();
         const { x, y } = getClientCoordinates(e);
-        const angle = Math.atan2(y - center().y, x - center().x);
+        const angle = Math.atan2(
+            (y - center().y) / window.devicePixelRatio,
+            (x - center().x) / window.devicePixelRatio,
+        );
         setRotation(rotation() + (angle - startAngle()) * (180 / Math.PI));
         setStartAngle(angle);
     }
+
+    onMount(() => {
+        document.addEventListener("touchmove", handleDrag, { passive: false });
+        document.addEventListener("touchend", handleDragEnd, { passive: false });
+        document.addEventListener("touchstart", handleDragStart, { passive: false });
+
+        onCleanup(() => {
+            document.removeEventListener("touchmove", handleDrag);
+            document.removeEventListener("touchend", handleDragStart);
+            document.removeEventListener("touchstart", handleDragEnd);
+        });
+    });
 
     return (
         <main
@@ -53,9 +69,6 @@ export default function Home() {
             onMouseUp={handleDragEnd}
             onMouseDown={handleDragStart}
             onMouseMove={handleDrag}
-            onTouchEnd={handleDragEnd}
-            onTouchStart={handleDragStart}
-            onTouchMove={handleDrag}
             style={{
                 cursor: isDragging() ? "grabbing" : "grab",
             }}
@@ -76,9 +89,12 @@ export default function Home() {
 
 function getClientCoordinates(e: MouseEvent | TouchEvent) {
     if (e instanceof MouseEvent) {
-        return { x: e.clientX, y: e.clientY };
+        return { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
     } else if (e instanceof TouchEvent) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        return {
+            x: e.touches[0].clientX + window.scrollX,
+            y: e.touches[0].clientY + window.scrollY,
+        };
     }
     return { x: 0, y: 0 };
 }
