@@ -84,7 +84,7 @@ function getClientCoordinates(e: MouseEvent | TouchEvent) {
 }
 
 function isPinchEvent(e: Event) {
-    if (!(e instanceof TouchEvent)) {
+    if (typeof TouchEvent === "undefined" || !(e instanceof TouchEvent)) {
         return false;
     }
     return e.touches.length > 1;
