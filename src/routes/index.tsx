@@ -47,7 +47,9 @@ export default function Home() {
             (y - center().y) / window.devicePixelRatio,
             (x - center().x) / window.devicePixelRatio,
         );
-        setRotation(rotation() + (angle - startAngle()) * (180 / Math.PI));
+        const newRotation = rotation() + (angle - startAngle()) * (180 / Math.PI);
+        setRotation(newRotation);
+        console.log(newRotation);
         setStartAngle(angle);
     }
 
@@ -65,7 +67,7 @@ export default function Home() {
 
     return (
         <main
-            class="fixed overflow-hidden"
+            class="fixed overflow-hidden w-screen h-screen"
             onMouseUp={handleDragEnd}
             onMouseDown={handleDragStart}
             onMouseMove={handleDrag}
