@@ -1,4 +1,4 @@
-import { createMemo, createSignal } from "solid-js";
+import { createEffect, createMemo, createSignal } from "solid-js";
 
 export default function Home() {
     const [isDragging, setIsDragging] = createSignal(false);
@@ -20,31 +20,45 @@ export default function Home() {
         };
     });
 
-    function handleMouseDown(e: MouseEvent) {
-        const angle = Math.atan2(e.clientY - center().y, e.clientX - center().x);
+    function getClientCoordinates(e: MouseEvent | TouchEvent) {
+        if (e instanceof MouseEvent) {
+            return { x: e.clientX, y: e.clientY };
+        } else if (e instanceof TouchEvent) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: 0, y: 0 };
+    }
+
+    function handleDragStart(e: MouseEvent | TouchEvent) {
+        const { x, y } = getClientCoordinates(e);
+        const angle = Math.atan2(y - center().y, x - center().x);
         setStartAngle(angle);
         setIsDragging(true);
     }
 
-    function handleMouseUp() {
+    function handleDragEnd() {
         setIsDragging(false);
     }
 
-    function handleMouseMove(e: MouseEvent) {
+    function handleDrag(e: MouseEvent | TouchEvent) {
         if (!isDragging()) {
             return;
         }
-        const angle = Math.atan2(e.clientY - center().y, e.clientX - center().x);
+        const { x, y } = getClientCoordinates(e);
+        const angle = Math.atan2(y - center().y, x - center().x);
         setRotation(rotation() + (angle - startAngle()) * (180 / Math.PI));
         setStartAngle(angle);
     }
 
     return (
         <main
-            class="flex flex-col items-center justify-center overflow-clip"
-            onMouseUp={handleMouseUp}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
+            class="fixed overflow-hidden"
+            onMouseUp={handleDragEnd}
+            onMouseDown={handleDragStart}
+            onMouseMove={handleDrag}
+            onTouchEnd={handleDragEnd}
+            onTouchStart={handleDragStart}
+            onTouchMove={handleDrag}
             style={{
                 cursor: isDragging() ? "grabbing" : "grab",
             }}
@@ -53,7 +67,7 @@ export default function Home() {
                 ref={setRef}
                 src="./wheel.png"
                 alt="An emotion wheel comprising of 3 rings"
-                class="max-w-screen aspect-square max-h-screen object-scale-down"
+                class="max-w-screen fixed inset-0 m-auto aspect-square max-h-screen object-scale-down"
                 draggable="false"
                 style={{
                     transform: `rotate(${rotation()}deg)`,
