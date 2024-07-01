@@ -20,16 +20,10 @@ export default function Home() {
         };
     });
 
-    function getClientCoordinates(e: MouseEvent | TouchEvent) {
-        if (e instanceof MouseEvent) {
-            return { x: e.clientX, y: e.clientY };
-        } else if (e instanceof TouchEvent) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-        return { x: 0, y: 0 };
-    }
-
     function handleDragStart(e: MouseEvent | TouchEvent) {
+        if (isPinchEvent(e)) {
+            return;
+        }
         const { x, y } = getClientCoordinates(e);
         const angle = Math.atan2(y - center().y, x - center().x);
         setStartAngle(angle);
@@ -42,6 +36,9 @@ export default function Home() {
 
     function handleDrag(e: MouseEvent | TouchEvent) {
         if (!isDragging()) {
+            return;
+        }
+        if (isPinchEvent(e)) {
             return;
         }
         const { x, y } = getClientCoordinates(e);
@@ -75,4 +72,20 @@ export default function Home() {
             />
         </main>
     );
+}
+
+function getClientCoordinates(e: MouseEvent | TouchEvent) {
+    if (e instanceof MouseEvent) {
+        return { x: e.clientX, y: e.clientY };
+    } else if (e instanceof TouchEvent) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: 0, y: 0 };
+}
+
+function isPinchEvent(e: Event) {
+    if (!(e instanceof TouchEvent)) {
+        return false;
+    }
+    return e.touches.length > 1;
 }
